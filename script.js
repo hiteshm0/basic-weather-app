@@ -5,32 +5,44 @@ const descDisplay = document.getElementById("descDisplay");
 const tempDisplay = document.getElementById("tempDisplay");
 const weatherForm = document.querySelector("form");
 const card = document.getElementById("card");
-const apiKey = ""
+const errorDisplay = document.getElementById("errorDisplay");
 
-console.log("hihihi")
-
-weatherForm.addEventListener("submit", (event) => {
+weatherForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    getWeatherData();
-});
-
-function getWeatherData(){
-    const city = cityInput.value;
-    if( city){
-        console.log("hi");
-        document.getElementById("errorDisplay").textContent = "";
-        cityDisplay.textContent = city;
-        displayWeatherInfo({temp: 26, humidity: 70, desc: "Cloudy"})
-        console.log("bye");
-     } else{
+    const city = cityInput.value.trim();
+    if(city) {
+        try {
+            const weatherData = await getWeatherData(city);
+            displayWeatherInfo(weatherData);
+        }
+        catch(error) {
+            displayErrorMessage(error.message || error);
+        }
+    } else {
         displayErrorMessage("Enter valid city name.");
     }
+    
+});
+
+async function getWeatherData(city){
+    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+        throw new Error("Could not fetch weather data");
+    }
+
+    return await response.json();
 }
 
 function displayWeatherInfo(data){
-    tempDisplay.textContent = `${data.temp} Celsius`;
-    humidityDisplay.textContent = `${data.humidity}`;
-    descDisplay.textContent = data.desc;
+    errorDisplay.textContent = "";
+
+    cityDisplay.textContent = data.name;
+    tempDisplay.textContent = `${data.main.temp}°C`;
+    humidityDisplay.textContent = `Humidity: ${data.main.humidity}%`;
+    descDisplay.textContent = data.weather[0].description;
 }
 
 function displayErrorMessage(error){
@@ -39,5 +51,5 @@ function displayErrorMessage(error){
     humidityDisplay.textContent = "";
     descDisplay.textContent = "";
 
-    document.getElementById("errorDisplay").textContent = error;
+    errorDisplay.textContent = error;
 }
